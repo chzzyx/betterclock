@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customizable Clock</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #4b4d4a 0%, #858b88 100%);
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        #clock {
+            font-size: 3em;
+            border: 2px solid white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #date {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #timezone-selector, #add-timezone, #timer-input, #alarm-input, #todo-input {
+            margin: 10px;
+            padding: 10px;
+            font-size: 1em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 90%;
+            max-width: 300px;
+        }
+        #additional-timezones, #todo-list {
+            margin-top: 20px;
+            width: 90%;
+            max-width: 600px;
+        }
+        .timezone, .todo-item {
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .funny-effect {
+            animation: funnyEffect 1s infinite;
+        }
+        @keyframes funnyEffect {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            50% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .completed {
+            text-decoration: line-through;
+        }
+        @media (max-width: 600px) {
+            #clock {
+                font-size: 2em;
+                padding: 15px;
+            }
+            #date {
+                font-size: 1.2em;
+            }
+            #timezone-selector, #add-timezone, #timer-input, #alarm-input, #todo-input {
+                font-size: 0.9em;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="clock"></div>
+    <div id="date"></div>
+    <select id="timezone-selector">
+        <option value="UTC">UTC</option>
+        <option value="America/Los_Angeles">Pacific Time (PT)</option>
+        <option value="Asia/Tbilisi">Tbilisi</option>
+        <option value="Europe/Moscow">Moscow</option>
+    </select>
+    <input type="text" id="add-timezone" placeholder="Add Timezone (e.g., Asia/Shanghai)">
+    <div id="additional-timezones"></div>
+    <input type="text" id="timer-input" placeholder="Set Timer (seconds)">
+    <div id="timer-display"></div>
+    <input type="text" id="alarm-input" placeholder="Set Alarm (HH:MM)">
+    <div id="alarm-display"></div>
+    <input type="text" id="todo-input" placeholder="Add To-Do Item">
+    <div id="todo-list"></div>
+    <script>
+        const clockElement = document.getElementById('clock');
+        const dateElement = document.getElementById('date');
+        const timezoneSelector = document.getElementById('timezone-selector');
+        const addTimezoneInput = document.getElementById('add-timezone');
+        const additionalTimezonesContainer = document.getElementById('additional-timezones');
+        const timerInput = document.getElementById('timer-input');
+        const timerDisplay = document.getElementById('timer-display');
+        const alarmInput = document.getElementById('alarm-input');
+        const alarmDisplay = document.getElementById('alarm-display');
+        const todoInput = document.getElementById('todo-input');
+        const todoList = document.getElementById('todo-list');
+
+        function updateClock() {
+            const now = new Date();
+            const selectedTimezone = timezoneSelector.value;
+            const options = { timeZone: selectedTimezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            const timeString = now.toLocaleTimeString('en-US', options);
+            clockElement.textContent = timeString;
+
+            const dateOptions = { timeZone: selectedTimezone, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = now.toLocaleDateString('en-US', dateOptions);
+            dateElement.textContent = dateString;
+
+            const additionalTimezones = document.querySelectorAll('.timezone');
+            additionalTimezones.forEach(timezoneElement => {
+                const timezone = timezoneElement.dataset.timezone;
+                const time = now.toLocaleTimeString('en-US', { timeZone: timezone, ...options });
+                timezoneElement.textContent = `${timezone}: ${time}`;
+            });
+        }
+
+        function addTimezone() {
+            const timezone = addTimezoneInput.value.trim();
+            if (timezone) {
+                const timezoneElement = document.createElement('div');
+                timezoneElement.className = 'timezone';
+                timezoneElement.dataset.timezone = timezone;
+                additionalTimezonesContainer.appendChild(timezoneElement);
+                addTimezoneInput.value = '';
+            }
+        }
+
+        function setTimer() {
+            const seconds = parseInt(timerInput.value.trim());
+            if (!isNaN(seconds)) {
+                const endTime = new Date(Date.now() + seconds * 1000);
+                timerDisplay.textContent = `Timer will go off at: ${endTime.toLocaleTimeString('en-US')}`;
+                setTimeout(() => {
+                    alert('Timer finished!');
+                    clockElement.classList.add('funny-effect');
+                    setTimeout(() => clockElement.classList.remove('funny-effect'), 3000);
+                    timerDisplay.textContent = '';
+                }, seconds * 1000);
+                timerInput.value = '';
+            }
+        }
+
+        function setAlarm() {
+            const alarmTime = alarmInput.value.trim();
+            if (alarmTime) {
+                const [alarmHours, alarmMinutes] = alarmTime.split(':').map(Number);
+                alarmDisplay.textContent = `Alarm set for: ${alarmTime}`;
+                const checkAlarm = setInterval(() => {
+                    const now = new Date();
+                    if (now.getHours() === alarmHours && now.getMinutes() === alarmMinutes) {
+                        alert('Alarm ringing!');
+                        clockElement.classList.add('funny-effect');
+                        setTimeout(() => clockElement.classList.remove('funny-effect'), 3000);
+                        clearInterval(checkAlarm);
+                        alarmDisplay.textContent = '';
+                    }
+                }, 1000);
+                alarmInput.value = '';
+            }
+        }
+
+        function addTodo() {
+            const todoText = todoInput.value.trim();
+            if (todoText) {
+                const todoItem = document.createElement('div');
+                todoItem.className = 'todo-item';
+                todoItem.textContent = todoText;
+
+                const completeButton = document.createElement('button');
+                completeButton.textContent = 'Complete';
+                completeButton.addEventListener('click', () => {
+                    if (todoItem.classList.contains('completed')) {
+                        todoItem.classList.remove('completed');
+                    } else {
+                        todoItem.classList.add('completed');
+                    }
+                });
+
+                todoItem.appendChild(completeButton);
+                todoList.appendChild(todoItem);
+                todoInput.value = '';
+            }
+        }
+
+        function setDefaultTimezone() {
+            fetch('https://ipapi.co/json/')
+                .then(response => response.json())
+                .then(data => {
+                    const userTimezone = data.timezone;
+                    const options = Array.from(timezoneSelector.options);
+                    const isTimezoneInOptions = options.some(option => option.value === userTimezone);
+
+                    if (isTimezoneInOptions) {
+                        timezoneSelector.value = userTimezone;
+                    } else {
+                        addTimezoneInput.value = userTimezone;
+                        addTimezone();
+                        timezoneSelector.value = userTimezone;
+                    }
+                })
+                .catch(error => console.error('Error fetching user timezone:', error));
+        }
+
+        addTimezoneInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTimezone();
+            }
+        });
+
+        timerInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                setTimer();
+            }
+        });
+
+        alarmInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                setAlarm();
+            }
+        });
+
+        todoInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+
+        setInterval(updateClock, 1000);
+        updateClock(); // initial call to display clock immediately
+        setDefaultTimezone(); // set default timezone based on user's location
+    </script>
+</body>
+</html>
